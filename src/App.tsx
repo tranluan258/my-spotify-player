@@ -48,6 +48,14 @@ function App() {
   const [trackActive, setTrackActive] = useState<string | null>(null);
 
   useEffect(() => {
+    //get token from local storage
+    const _token = localStorage.getItem("token");
+    if (_token) {
+      setToken(_token);
+    }
+  });
+
+  useEffect(() => {
     const hash = window.location.hash
       .substring(1)
       .split("&")
@@ -67,6 +75,7 @@ function App() {
 
     if (_token) {
       setToken(_token);
+      localStorage.setItem("token", _token);
     }
   }, []);
 
@@ -80,7 +89,18 @@ function App() {
       })
       .then((res) => {
         setPlaylist(res.data.items);
-        setCurrentPlaylist(res.data.items[0].id);
+        const currentPlaylist = localStorage.getItem("currentPlaylist");
+        if (currentPlaylist) {
+          setCurrentPlaylist(currentPlaylist);
+        } else {
+          setCurrentPlaylist(res.data.items[0].id);
+          localStorage.setItem("currentPlaylist", res.data.items[0].id);
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        setToken(null);
+        window.location.reload();
       });
   }, [token]);
 
@@ -101,8 +121,11 @@ function App() {
   }, [currentPlaylist, token]);
 
   const selectPlaylist = (e: IEvent) => {
+    console.log(e.target);
     const id: string = e.target.id;
     setCurrentPlaylist(id);
+    setPlay(true);
+    localStorage.setItem("currentPlaylist", id);
   };
 
   return (
@@ -119,20 +142,21 @@ function App() {
           </button>
         </div>
       ) : (
-        <div>
-          <div className="playlist flex justify-center">
+        <div className="flex flex-col justify-center place-items-center">
+          <div className="playlist flex">
             {playlist &&
               playlist!.map((item: IPlaylist) => (
                 <div
                   className="playlist-item px-2 h-32 flex  flex-row justify-center place-items-center hover:bg-gray-700"
                   key={item.id}
                   onClick={selectPlaylist}
+                  id={item.id}
                 >
                   <img
                     src={item.images[0].url}
                     alt={item.name}
                     id={item.id}
-                    className="h-1/2"
+                    className="h-24 w-24 rounded-full"
                   />
                   <div className="playlist-item-details">
                     <h2
@@ -145,7 +169,25 @@ function App() {
                 </div>
               ))}
           </div>
-          <div className="player w-1/2 translate-x-1/2 mt-6">
+          <div className="tracks flex flex-col place-items-center justify-center mt-6">
+            {tracks &&
+              tracks!.map((item: ITrack) =>
+                trackActive && item.track.id === trackActive ? (
+                  <div className="track-item" key={item.track.id}>
+                    <div className="track-item-details text-red-400">
+                      <h2>{item.track.name}</h2>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="track-item" key={item.track.id}>
+                    <div className="track-item-details text-white">
+                      <h2>{item.track.name}</h2>
+                    </div>
+                  </div>
+                )
+              )}
+          </div>
+          <div className="player w-1/2  mt-6">
             {currentPlaylist && (
               <SpotifyPlayer
                 token={token}
@@ -168,24 +210,6 @@ function App() {
                 }}
               />
             )}
-          </div>
-          <div className="tracks flex flex-col place-items-center justify-center mt-6">
-            {tracks &&
-              tracks!.map((item: ITrack) =>
-                trackActive && item.track.id === trackActive ? (
-                  <div className="track-item" key={item.track.id}>
-                    <div className="track-item-details text-red-400">
-                      <h2>{item.track.name}</h2>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="track-item" key={item.track.id}>
-                    <div className="track-item-details text-white">
-                      <h2>{item.track.name}</h2>
-                    </div>
-                  </div>
-                )
-              )}
           </div>
         </div>
       )}
