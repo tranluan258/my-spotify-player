@@ -143,11 +143,11 @@ function App() {
         </div>
       ) : (
         <div className="flex flex-col justify-center place-items-center">
-          <div className="playlist flex">
+          <div className="playlist flex h-[150px]">
             {playlist &&
               playlist!.map((item: IPlaylist) => (
                 <div
-                  className="playlist-item px-2 h-32 flex  flex-row justify-center place-items-center hover:bg-gray-700"
+                  className="playlist-item px-2  flex  flex-row justify-center place-items-center hover:bg-gray-700"
                   key={item.id}
                   onClick={selectPlaylist}
                   id={item.id}
