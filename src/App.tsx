@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import SpotifyPlayer from 'react-spotify-web-playback';
 import * as React from 'react';
+import { IPlaylist, Playlist } from './components/Playlist';
+import { ITrack, Track } from './components/Track';
 
 const CLIENT_ID = import.meta.env.VITE_CLIENT_ID;
 const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI;
@@ -9,21 +11,6 @@ const AUTH_ENDPOINT = import.meta.env.VITE_AUTH_ENDPOINT;
 const RESPONSE_TYPE = 'token';
 const SCOPES = import.meta.env.VITE_SCOPES;
 
-interface IPlaylist {
-  id: string;
-  name: string;
-  images: Array<{
-    url: string;
-  }>;
-}
-
-interface ITrack {
-  id?: string;
-  track: {
-    id: string;
-    name: string;
-  };
-}
 interface IState {
   isPlaying: boolean;
   track: {
@@ -120,85 +107,55 @@ function App() {
   return (
     <div className='App'>
       {!token ? (
-        <div className='Login max-h-full h-56 grid content-center'>
+        <div className='grid content-center h-56 max-h-full Login'>
           <button className=''>
             <a
               href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${SCOPES}`}
-              className='btn btn--login bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline'
+              className='py-2 px-4 font-bold text-white bg-green-500 rounded hover:bg-green-700 focus:outline-none btn btn--login focus:shadow-outline'
             >
               Login to Spotify
             </a>
           </button>
         </div>
       ) : (
-        <div className='flex flex-col justify-center place-items-center'>
-          <div className='playlist flex h-[150px]'>
+        <div>
+          <div className='flex flex-row justify-center items-center w-full h-[100px]'>
             {playlist &&
-              playlist!.map((item: IPlaylist) => (
-                <div
-                  className='playlist-item px-2  flex  flex-row justify-center place-items-center hover:bg-gray-700'
-                  key={item.id}
-                  onClick={selectPlaylist}
-                  id={item.id}
-                >
-                  <img
-                    src={item.images[0].url}
-                    alt={item.name}
-                    id={item.id}
-                    className='h-24 w-24 rounded-full'
-                  />
-                  <div className='playlist-item-details'>
-                    <h2
-                      id={item.id}
-                      className='place-items-center text-white mx-5 border-b-2 border-transparent '
-                    >
-                      {item.name}
-                    </h2>
-                  </div>
-                </div>
+              playlist!.map((playlist: IPlaylist) => (
+                <Playlist item={playlist} selectPlaylist={selectPlaylist} />
               ))}
           </div>
-          <div className='tracks flex flex-col place-items-center justify-center mt-6'>
-            {tracks &&
-              tracks!.map((item: ITrack) =>
-                trackActive && item.track.id === trackActive ? (
-                  <div className='track-item' key={item.track.id}>
-                    <div className='track-item-details text-red-400'>
-                      <h2>{item.track.name}</h2>
-                    </div>
-                  </div>
-                ) : (
-                  <div className='track-item' key={item.track.id}>
-                    <div className='track-item-details text-white'>
-                      <h2>{item.track.name}</h2>
-                    </div>
-                  </div>
-                )
+          <div className='mt-6 flex  justify-center items-center '>
+            <div className='w-1/2'>
+              {currentPlaylist && (
+                <SpotifyPlayer
+                  token={token}
+                  uris={['spotify:playlist:' + currentPlaylist]}
+                  play={play}
+                  callback={(state: IState) => {
+                    if (state.track) setTrackActive(state.track.id);
+                    if (!state.isPlaying && state.track?.id.length > 0)
+                      setPlay(false);
+                    if (state.isPlaying) setPlay(true);
+                  }}
+                  styles={{
+                    bgColor: '#333',
+                    color: '#fff',
+                    loaderColor: '#fff',
+                    sliderColor: '#1cb954',
+                    savedColor: '#fff',
+                    trackArtistColor: '#ccc',
+                    trackNameColor: '#fff',
+                  }}
+                />
               )}
+            </div>
           </div>
-          <div className='player w-1/2  mt-6'>
-            {currentPlaylist && (
-              <SpotifyPlayer
-                token={token}
-                uris={['spotify:playlist:' + currentPlaylist]}
-                play={play}
-                callback={(state: IState) => {
-                  if (state.track) setTrackActive(state.track.id);
-                  if (!state.isPlaying && state.track?.id.length > 0)
-                    setPlay(false);
-                  if (state.isPlaying) setPlay(true);
-                }}
-                styles={{
-                  bgColor: '#333',
-                  color: '#fff',
-                  loaderColor: '#fff',
-                  sliderColor: '#1cb954',
-                  savedColor: '#fff',
-                  trackArtistColor: '#ccc',
-                  trackNameColor: '#fff',
-                }}
-              />
-            )}
+          <div className='flex flex-col  items-center mt-6 tracks'>
+            {tracks &&
+              tracks!.map((item: ITrack) => (
+                <Track item={item} isActive={item.track.id === trackActive} />
+              ))}
           </div>
         </div>
       )}
